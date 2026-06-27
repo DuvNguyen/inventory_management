@@ -9,6 +9,7 @@ import ProductTable from '../../../components/products/ProductTable';
 import ProductForm, { ProductFormValues } from '../../../components/products/ProductForm';
 import CsvUploader from '../../../components/products/CsvUploader';
 import { Plus, UploadCloud, Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { useProductSelection } from '../../../hooks/useProductSelection';
 
 interface ProductsResponse {
   data: Product[];
@@ -29,8 +30,20 @@ export default function ProductsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Modal State
-  const [activeModal, setActiveModal] = useState<'add' | 'edit' | 'upload' | null>(null);
+  const [activeModal, setActiveModal] = useState<'add' | 'edit' | 'upload' | 'deleteConfirm' | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Selection Hook
+  const {
+    isSelectMode,
+    setIsSelectMode,
+    selectedIds,
+    toggleSelectMode,
+    toggleSelect,
+    selectAll,
+    clearSelections,
+  } = useProductSelection(page, search);
 
   const fetchProducts = useCallback(async () => {
     setIsLoading(true);
@@ -103,6 +116,24 @@ export default function ProductsPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    setIsBulkDeleting(true);
+    try {
+      await api.delete<ApiResponse<{ deletedCount: number }>>('/products/bulk', {
+        data: { ids: Array.from(selectedIds) },
+      });
+      toast('Products successfully deleted.', 'success');
+      clearSelections();
+      setIsSelectMode(false);
+      setActiveModal(null);
+      fetchProducts();
+    } catch (error: unknown) {
+      toast(getErrorMessage(error), 'error');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const handleCloseModal = () => {
     setActiveModal(null);
     setEditingProduct(null);
@@ -129,6 +160,19 @@ export default function ProductsPage() {
 
         {isAdmin && (
           <div className="flex items-center gap-3">
+            {selectedIds.size >= 1 && (
+              <button
+                onClick={() => setActiveModal('deleteConfirm')}
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer"
+                style={{ borderRadius: '2px' }}
+              >
+                <span>
+                  {selectedIds.size === 1
+                    ? 'Delete Selected'
+                    : `Delete Selected (${selectedIds.size})`}
+                </span>
+              </button>
+            )}
             <button
               onClick={() => setActiveModal('upload')}
               className="flex items-center gap-2 border border-secondary/40 hover:border-primary text-primary px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors bg-surface cursor-pointer"
@@ -136,6 +180,17 @@ export default function ProductsPage() {
             >
               <UploadCloud className="w-4 h-4" />
               <span>Import CSV</span>
+            </button>
+            <button
+              onClick={toggleSelectMode}
+              className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors cursor-pointer border ${
+                isSelectMode
+                  ? 'bg-neutral border-tertiary text-tertiary hover:bg-neutral/85'
+                  : 'bg-surface border-secondary/40 hover:border-primary text-primary'
+              }`}
+              style={{ borderRadius: '2px' }}
+            >
+              <span>{isSelectMode ? 'Cancel' : 'Select'}</span>
             </button>
             <button
               onClick={() => setActiveModal('add')}
@@ -155,6 +210,10 @@ export default function ProductsPage() {
         onDelete={handleDeleteProduct}
         onEdit={handleEditClick}
         isAdmin={isAdmin}
+        isSelectMode={isSelectMode}
+        selectedIds={selectedIds}
+        onToggleSelect={toggleSelect}
+        onSelectAll={selectAll}
       />
 
       {products.length > 0 && (
@@ -217,6 +276,34 @@ export default function ProductsPage() {
                     IMPORT PRODUCTS FROM CSV
                   </h3>
                   <CsvUploader />
+                </div>
+              )}
+              {activeModal === 'deleteConfirm' && (
+                <div className="space-y-6">
+                  <h3 className="font-serif text-xl tracking-wide text-primary border-b border-secondary/15 pb-4">
+                    CONFIRM DELETION
+                  </h3>
+                  <p className="text-sm text-secondary">
+                    Are you sure you want to delete {selectedIds.size} product(s)? This action cannot be undone.
+                  </p>
+                  <div className="flex justify-end gap-3 pt-4 border-t border-secondary/15">
+                    <button
+                      onClick={() => setActiveModal(null)}
+                      disabled={isBulkDeleting}
+                      className="border border-secondary/40 hover:border-primary text-primary px-4 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors bg-surface cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ borderRadius: '2px' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleBulkDelete}
+                      disabled={isBulkDeleting}
+                      className="bg-red-500 hover:bg-red-600 text-white font-semibold text-xs tracking-widest uppercase px-6 py-2.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      style={{ borderRadius: '2px' }}
+                    >
+                      {isBulkDeleting ? 'Deleting...' : 'Confirm Delete'}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

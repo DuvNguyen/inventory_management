@@ -9,6 +9,10 @@ interface ProductTableProps {
   onDelete: (id: string) => Promise<void>;
   onEdit: (product: Product) => void;
   isAdmin: boolean;
+  isSelectMode: boolean;
+  selectedIds: Set<string>;
+  onToggleSelect: (id: string) => void;
+  onSelectAll: (ids: string[]) => void;
 }
 
 export default function ProductTable({
@@ -17,6 +21,10 @@ export default function ProductTable({
   onDelete,
   onEdit,
   isAdmin,
+  isSelectMode,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
 }: ProductTableProps) {
   if (isLoading) {
     return (
@@ -46,6 +54,19 @@ export default function ProductTable({
       <table className="w-full text-left border-collapse font-sans text-sm">
         <thead>
           <tr className="border-b border-secondary/20 bg-neutral/40">
+            {isAdmin && isSelectMode && (
+              <th className="px-6 py-4 w-12 text-center">
+                <input
+                  type="checkbox"
+                  checked={products.length > 0 && products.every((p) => selectedIds.has(p._id))}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    onSelectAll(products.map((p) => p._id));
+                  }}
+                  className="w-4 h-4 border border-secondary/30 bg-surface text-tertiary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                  style={{ borderRadius: '2px' }}
+                />
+              </th>
+            )}
             <th className="px-6 py-4 text-[10px] font-semibold tracking-widest uppercase text-secondary">
               SKU
             </th>
@@ -78,6 +99,19 @@ export default function ProductTable({
 
             return (
               <tr key={product._id} className="hover:bg-neutral/40 transition-colors">
+                {isAdmin && isSelectMode && (
+                  <td className="px-6 py-4 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(product._id)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        onToggleSelect(product._id);
+                      }}
+                      className="w-4 h-4 border border-secondary/30 bg-surface text-tertiary focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                      style={{ borderRadius: '2px' }}
+                    />
+                  </td>
+                )}
                 <td className="px-6 py-4 font-mono text-xs font-semibold text-tertiary">
                   {product.sku}
                 </td>
@@ -100,21 +134,25 @@ export default function ProductTable({
                 </td>
                 {isAdmin && (
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <button
-                        onClick={() => onEdit(product)}
-                        className="p-1.5 text-secondary hover:text-tertiary transition-colors cursor-pointer"
-                        title="Edit Product"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onDelete(product._id)}
-                        className="p-1.5 text-secondary hover:text-red-400 transition-colors cursor-pointer"
-                        title="Delete Product"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <div className="flex items-center justify-end gap-3 min-h-[32px]">
+                      {(!isSelectMode || (selectedIds.size === 1 && selectedIds.has(product._id))) && (
+                        <>
+                          <button
+                            onClick={() => onEdit(product)}
+                            className="p-1.5 text-secondary hover:text-tertiary transition-colors cursor-pointer"
+                            title="Edit Product"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDelete(product._id)}
+                            className="p-1.5 text-secondary hover:text-red-400 transition-colors cursor-pointer"
+                            title="Delete Product"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 )}
