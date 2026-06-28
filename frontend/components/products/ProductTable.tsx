@@ -59,7 +59,7 @@ export default function ProductTable({
                 <input
                   type="checkbox"
                   checked={products.length > 0 && products.every((p) => selectedIds.has(p._id))}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  onChange={() => {
                     onSelectAll(products.map((p) => p._id));
                   }}
                   className="w-4 h-4 border border-secondary/30 bg-surface text-tertiary focus:ring-0 focus:ring-offset-0 cursor-pointer"
@@ -104,7 +104,7 @@ export default function ProductTable({
                     <input
                       type="checkbox"
                       checked={selectedIds.has(product._id)}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      onChange={() => {
                         onToggleSelect(product._id);
                       }}
                       className="w-4 h-4 border border-secondary/30 bg-surface text-tertiary focus:ring-0 focus:ring-offset-0 cursor-pointer"

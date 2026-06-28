@@ -1,7 +1,6 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../../hooks/useAuth';
 
 export default function Header() {
   const pathname = usePathname();

@@ -4,9 +4,11 @@ export function useProductSelection(page: number, search: string) {
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // Clear selectedIds when page or search changes (stale selections)
   useEffect(() => {
-    setSelectedIds(new Set());
+    const timeout = setTimeout(() => {
+      setSelectedIds(new Set());
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [page, search]);
 
   const toggleSelectMode = () => {

@@ -6,7 +6,10 @@ export function useAuth() {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
+    const timeout = setTimeout(() => {
+      setIsHydrated(true);
+    }, 0);
+    return () => clearTimeout(timeout);
   }, []);
 
   const user = isHydrated ? store.user : null;

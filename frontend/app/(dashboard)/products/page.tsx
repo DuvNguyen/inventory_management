@@ -65,7 +65,10 @@ export default function ProductsPage() {
   }, [page, limit, search, toast]);
 
   useEffect(() => {
-    fetchProducts();
+    const timeout = setTimeout(() => {
+      fetchProducts();
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [fetchProducts]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
