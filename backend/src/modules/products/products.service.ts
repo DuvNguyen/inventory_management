@@ -18,6 +18,15 @@ export interface CsvRowError {
   reason: string;
 }
 
+export interface MongooseRawResult {
+  lastErrorObject?: {
+    updatedExisting?: boolean;
+    n?: number;
+  };
+  value?: ProductDocument;
+  ok?: number;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(
@@ -157,7 +166,9 @@ export class ProductsService {
     }
 
     if (records.length > 5000) {
-      throw new BadRequestException('CSV file exceeds the maximum limit of 5000 rows');
+      throw new BadRequestException(
+        'CSV file exceeds the maximum limit of 5000 rows',
+      );
     }
 
     const requiredColumns = ['sku', 'name', 'price', 'stock'];
@@ -208,7 +219,7 @@ export class ProductsService {
               rawResult: true,
             },
           )
-          .exec()) as any;
+          .exec()) as unknown as MongooseRawResult;
 
         const wasUpdated = res?.lastErrorObject?.updatedExisting;
         if (wasUpdated) {
@@ -246,7 +257,8 @@ export class ProductsService {
       return {
         row: rowNum,
         sku,
-        reason: 'SKU must contain only uppercase alphanumeric characters and hyphens',
+        reason:
+          'SKU must contain only uppercase alphanumeric characters and hyphens',
       };
     }
     if (!name || name.length < 2) {

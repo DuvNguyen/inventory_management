@@ -8,12 +8,12 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, TransformFnParams } from 'class-transformer';
 
 export class CreateProductDto {
   @IsString()
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  @Transform(({ value }: TransformFnParams): unknown =>
+    typeof value === 'string' ? value.trim().toUpperCase() : (value as unknown),
   )
   @Matches(/^[A-Z0-9-]+$/, {
     message: 'SKU must be uppercase alphanumeric (A-Z, 0-9, -)',

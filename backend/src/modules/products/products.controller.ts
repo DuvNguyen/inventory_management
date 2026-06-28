@@ -12,12 +12,12 @@ import {
   HttpCode,
   HttpStatus,
   Query,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Types } from 'mongoose';
+import * as path from 'path';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -87,18 +87,19 @@ export class ProductsController {
   @Roles(Role.ADMIN)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: require('multer').memoryStorage(),
+      storage: memoryStorage(),
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB
       },
-      fileFilter: (req: any, file: any, cb: any) => {
-        const path = require('path');
+      fileFilter: (
+        req: unknown,
+        file: Express.Multer.File,
+        cb: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
         const ext = path.extname(file.originalname).toLowerCase();
         if (ext !== '.csv') {
           return cb(
-            new (require('@nestjs/common').BadRequestException)(
-              'Only CSV files are allowed (.csv)',
-            ),
+            new BadRequestException('Only CSV files are allowed (.csv)'),
             false,
           );
         }
@@ -108,12 +109,7 @@ export class ProductsController {
           'text/plain',
         ];
         if (!allowedMimeTypes.includes(file.mimetype)) {
-          return cb(
-            new (require('@nestjs/common').BadRequestException)(
-              'Invalid file MIME type',
-            ),
-            false,
-          );
+          return cb(new BadRequestException('Invalid file MIME type'), false);
         }
         cb(null, true);
       },
@@ -129,9 +125,7 @@ export class ProductsController {
     errors: CsvRowError[];
   }> {
     if (!file) {
-      throw new (require('@nestjs/common').BadRequestException)(
-        'CSV file is required',
-      );
+      throw new BadRequestException('CSV file is required');
     }
     return this.productsService.bulkImportCsv(
       file.buffer,
